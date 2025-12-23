@@ -6,8 +6,8 @@ import {
   Cog, 
   GitBranch, 
   FileOutput,
-  GripVertical,
-  Settings
+  Settings,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,12 +35,58 @@ const nodeLabels: Record<NodeType, string> = {
   output: 'Output',
 };
 
-const nodeColors: Record<NodeType, string> = {
-  trigger: 'node-trigger',
-  api: 'node-api',
-  process: 'node-process',
-  condition: 'node-condition',
-  output: 'node-output',
+const nodeDescriptions: Record<NodeType, string> = {
+  trigger: 'Inicia o fluxo',
+  api: 'Requisição HTTP',
+  process: 'Processa dados',
+  condition: 'Lógica condicional',
+  output: 'Gera resultado',
+};
+
+const nodeColors: Record<NodeType, { border: string; bg: string; icon: string }> = {
+  trigger: { 
+    border: 'border-l-[hsl(var(--node-trigger))]', 
+    bg: 'bg-[hsl(var(--node-trigger))]/10',
+    icon: 'text-[hsl(var(--node-trigger))]'
+  },
+  api: { 
+    border: 'border-l-[hsl(var(--node-api))]', 
+    bg: 'bg-[hsl(var(--node-api))]/10',
+    icon: 'text-[hsl(var(--node-api))]'
+  },
+  process: { 
+    border: 'border-l-[hsl(var(--node-process))]', 
+    bg: 'bg-[hsl(var(--node-process))]/10',
+    icon: 'text-[hsl(var(--node-process))]'
+  },
+  condition: { 
+    border: 'border-l-[hsl(var(--node-condition))]', 
+    bg: 'bg-[hsl(var(--node-condition))]/10',
+    icon: 'text-[hsl(var(--node-condition))]'
+  },
+  output: { 
+    border: 'border-l-[hsl(var(--node-output))]', 
+    bg: 'bg-[hsl(var(--node-output))]/10',
+    icon: 'text-[hsl(var(--node-output))]'
+  },
+};
+
+const getConfigSummary = (node: FlowNodeType): string => {
+  const config = node.config as any;
+  switch (node.type) {
+    case 'trigger':
+      return `Modo: ${config.mode || 'manual'}`;
+    case 'api':
+      return config.url ? `${config.method || 'GET'} ${config.url.substring(0, 30)}...` : 'URL não configurada';
+    case 'process':
+      return `Ação: ${config.action || 'format_txt'}`;
+    case 'condition':
+      return config.field ? `${config.field} ${config.operator} ${config.value}` : 'Não configurado';
+    case 'output':
+      return `Formato: ${config.format || 'txt'}`;
+    default:
+      return '';
+  }
 };
 
 export const FlowNodeComponent = memo(({ 
@@ -52,34 +98,37 @@ export const FlowNodeComponent = memo(({
 }: FlowNodeProps) => {
   const Icon = nodeIcons[node.type];
   const label = node.label || nodeLabels[node.type];
-  const colorClass = nodeColors[node.type];
+  const colors = nodeColors[node.type];
+  const configSummary = getConfigSummary(node);
 
   return (
     <div
       className={cn(
-        'node-card cursor-pointer group animate-fade-in',
-        colorClass,
+        'relative rounded-xl border-l-4 bg-card p-3 sm:p-4 shadow-lg transition-all duration-200 cursor-pointer',
+        'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]',
+        colors.border,
         isSelected && 'ring-2 ring-primary glow-primary'
       )}
       style={{ animationDelay: `${index * 50}ms` }}
-      onClick={() => onSelect(node.id)}
+      onClick={() => onConfigure(node.id)}
     >
       <div className="flex items-center gap-3">
-        <div className="cursor-grab opacity-50 group-hover:opacity-100 transition-opacity">
-          <GripVertical className="w-4 h-4" />
-        </div>
-        
         <div className={cn(
-          'w-10 h-10 rounded-lg flex items-center justify-center',
-          'bg-secondary/50'
+          'w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0',
+          colors.bg
         )}>
-          <Icon className="w-5 h-5 text-foreground" />
+          <Icon className={cn('w-5 h-5 sm:w-6 sm:h-6', colors.icon)} />
         </div>
         
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">{label}</p>
-          <p className="text-xs text-muted-foreground truncate">
-            {node.id}
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-sm sm:text-base truncate">{label}</p>
+            <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+              #{index + 1}
+            </span>
+          </div>
+          <p className="text-[10px] sm:text-xs text-muted-foreground truncate mt-0.5">
+            {configSummary}
           </p>
         </div>
         
@@ -88,23 +137,22 @@ export const FlowNodeComponent = memo(({
             e.stopPropagation();
             onConfigure(node.id);
           }}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-secondary rounded-lg"
+          className="p-2 hover:bg-secondary rounded-lg transition-colors flex-shrink-0"
+          aria-label="Configurar node"
         >
-          <Settings className="w-4 h-4" />
+          <Settings className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>
       
-      {/* Connection point */}
-      <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 z-10">
-        <div className="w-3 h-3 rounded-full bg-canvas-line border-2 border-card" />
-      </div>
-      
-      {/* Top connection point (except for first node) */}
+      {/* Connection points */}
       {index > 0 && (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-          <div className="w-3 h-3 rounded-full bg-canvas-line border-2 border-card" />
+          <div className="w-2.5 h-2.5 rounded-full bg-canvas-line border-2 border-card" />
         </div>
       )}
+      <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="w-2.5 h-2.5 rounded-full bg-canvas-line border-2 border-card" />
+      </div>
     </div>
   );
 });

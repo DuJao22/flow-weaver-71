@@ -7,10 +7,11 @@ import { JsonEditor } from '@/components/flow/JsonEditor';
 import { ExecutionPanel } from '@/components/flow/ExecutionPanel';
 import { AIAssistant } from '@/components/flow/AIAssistant';
 import { Helmet } from 'react-helmet-async';
+import { toast } from 'sonner';
 
 const defaultFlow: Flow = {
   nome: 'Novo Fluxo',
-  description: '',
+  description: 'Meu fluxo de automação',
   steps: [],
   createdAt: new Date().toISOString(),
 };
@@ -32,6 +33,7 @@ const Index = () => {
       createdAt: new Date().toISOString(),
     });
     setCurrentView('canvas');
+    toast.success('Novo fluxo criado!');
   };
 
   const renderContent = () => {
@@ -54,10 +56,11 @@ const Index = () => {
       <Helmet>
         <title>FlowMaster - Automação de Fluxos | Visual Workflow Builder</title>
         <meta name="description" content="FlowMaster é uma plataforma de automação de fluxos visual, similar ao n8n. Crie, edite e execute automações com editor visual, JSON editor, e assistente IA." />
-        <meta name="keywords" content="automação, workflow, fluxo, n8n, visual, editor, API, automação de processos" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="theme-color" content="#1a1a2e" />
       </Helmet>
       
-      <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
         <Header />
         
         <div className="flex-1 flex overflow-hidden">
